@@ -20,10 +20,10 @@ sudo python3 server/server.py
 # Single ping
 python3 client/client.py ping google.com
 
-# Traceroute
+## Traceroute
 python3 client/client.py traceroute google.com
 
-# Multi-destination ping (parallel)
+## Multi-destination ping (parallel)
 python3 client/client.py multi google.com cloudflare.com github.com
 
 ## Project Structure
