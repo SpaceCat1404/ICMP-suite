@@ -1,12 +1,24 @@
 # client.py
 import json
+import os
 import socket
 import ssl
 import sys
 import threading
 from pathlib import Path
 
-def send_request(cmd, host, server_host="localhost", server_port=9999, **kwargs):
+DEFAULT_SERVER_HOST = os.getenv("ICMP_SERVER_HOST", "localhost")
+try:
+    DEFAULT_SERVER_PORT = int(os.getenv("ICMP_SERVER_PORT", "9999"))
+except ValueError:
+    DEFAULT_SERVER_PORT = 9999
+
+def send_request(cmd, host, server_host=None, server_port=None, **kwargs):
+    if server_host is None:
+        server_host = DEFAULT_SERVER_HOST
+    if server_port is None:
+        server_port = DEFAULT_SERVER_PORT
+
     ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     cert_path = Path(__file__).resolve().parents[1] / "certs" / "server.crt"
     ctx.load_verify_locations(str(cert_path))
@@ -57,12 +69,13 @@ def print_traceroute(r):
         print(f"  {h['ttl']:2d}  {h['host']}  {rtt}")
     print()
 
-def multi_ping(hosts):
+def multi_ping(hosts, server_host=None, server_port=None):
     threads, results = [], {}
 
     def worker(h):
         try:
-            results[h] = send_request("ping", h)
+            results[h] = send_request("ping", h, server_host=server_host,
+                                      server_port=server_port)
         except Exception as e:
             results[h] = {"host": h, "error": str(e)}
 
@@ -83,6 +96,9 @@ if __name__ == "__main__":
         print("  python client.py ping <host>")
         print("  python client.py traceroute <host>")
         print("  python client.py multi <host1> <host2> ...")
+        print("\nOptional env vars:")
+        print("  ICMP_SERVER_HOST (default: localhost)")
+        print("  ICMP_SERVER_PORT (default: 9999)")
         sys.exit(1)
 
     # single target mode
