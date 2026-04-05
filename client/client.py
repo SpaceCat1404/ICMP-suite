@@ -24,7 +24,10 @@ def send_request(cmd, host, server_host=None, server_port=None, **kwargs):
     ctx.load_verify_locations(str(cert_path))
     ctx.check_hostname = False
 
-    with socket.create_connection((server_host, server_port)) as raw:
+    # Force IPv4 connection to avoid IPv6 resolution issues
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((server_host, server_port))
+    with sock as raw:
         with ctx.wrap_socket(raw) as tls:
             req = {"cmd": cmd, "host": host, **kwargs}
             tls.sendall(json.dumps(req).encode())
